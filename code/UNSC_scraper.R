@@ -24,24 +24,49 @@ links <- read_html(rootURL) %>%
   select(-1)
 
 # Get the links to the individual resolution and the accompanying information
-links.df <- links[c(1:3, 54),] %>%
+links.df <- links %>%
   mutate(
     resolution_links = map(   # Retain the links to the
       links,                  # individual resolutions
       ~ read_html(.) %>%
         html_nodes("td a") %>%
         html_attr(., "href")
+    ))
+
+# Function that extracts the tables
+scrape_table <- function(x){
+  
+  x %>%
+    read_html() %>%
+    html_nodes(".table") %>%    # table?
+    html_table() %>%
+    flatten_df()
+  
+}
+
+# Scrape safely
+scrape_table_possibly <- possibly(scrape_table, otherwise = NULL)
+    
+# Get the information from the tables
+links.df <- links.df %>%
+  mutate(resolution_table = map(links, ~scrape_table_possibly(.x))
+)
+
+# Rename the listed dfs
+links.df <- links.df %>%
+  mutate(
+    tbl_length = map(resolution_table, ncol),
+    names = case_when(
+      tbl_length == 1 ~ list(c("topic")),
+      tbl_length == 2 ~ list(c("resolution", "topic")),
+      tbl_length == 3 ~ list(c("resolution", "date", "topic")),
+      TRUE ~ list(NULL)
     ),
-    resolution_table = map(
-      links,
-      ~ read_html(.) %>%
-        html_table() %>%
-        .[[1]]
-    )
-  ) 
-# %>%
-#  unnest(resolution_links) %>%
-#  mutate(resolution = str_extract_all(resolution_links, "(?<=org/).+"))
+    resolution_table = map2(.x = resolution_table, .y = names, ~ set_names(.x, .y))
+  ) %>%
+  select(-c(tbl_length, names)) %>%
+  unnest(resolution_table, .preserve = resolution_links)
+  mutate(resolution_no = str_extract_all(resolution_links, "(?<=org/).+"))
 
 # (2) Download the resolutions
 ### ------------------------------------------------------------------------ ###
@@ -57,3 +82,10 @@ map2(
     download.file(url = .x, destfile = paste0("./GIZ-files/", .y, ".csv"), method = "curl")
   }
 )
+
+###
+
+# Check the length whether the length of the respective vectors is constant
+# across approaches (currently it isn't)
+tbl_rsl <- unnest(links.df, resolution_table)
+link_rsl <- unnest(links.df, resolution_links)
