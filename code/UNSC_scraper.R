@@ -65,27 +65,46 @@ links.df <- links.df %>%
     resolution_table = map2(.x = resolution_table, .y = names, ~ set_names(.x, .y))
   ) %>%
   select(-c(tbl_length, names)) %>%
-  unnest(resolution_table, .preserve = resolution_links)
-  mutate(resolution_no = str_extract_all(resolution_links, "(?<=org/).+"))
+  unnest(resolution_links, .preserve = resolution_table) %>%
+  mutate(resolution_id = flatten_chr(str_extract_all(resolution_links, "(?<=org/).+"))) %>%
+  distinct(resolution_links, .keep_all = TRUE) %>%        # some links are included multiple times
+  filter(str_detect(resolution_links, "RES") == TRUE)     # some letters that are not resolutions are included
+
+# Check whether all resolutions have been detected
+all_resolutions <- links.df %>%
+  distinct(resolution_links, .keep_all = TRUE) %>%
+  filter(str_detect(resolution_links, "RES") == TRUE) %>%
+  mutate(cons_num = strtoi(str_extract_all(resolution_id, "(?<=/)[:digit:]+"))) %>% #|%|/]
+  arrange(cons_num) %>%
+  mutate(cons_check = c(FALSE, diff(cons_num) != 1))
+
+# Not consecutive are 12 572 1106
+which(all_resolutions$cons_check == TRUE) 
+
+# Treatment:
+# Resolution 571 is not linked on the website but available: https://undocs.org/S/RES/571(1985)
+# Resolution 1107 is misformed but included as https://undocs.org/S/RES/11%2007(1997)
+# Add RES 571 manually:
+links.df <- bind_rows(links.df, 
+                    tibble(year = "1985", 
+                    links = "https://www.un.org/securitycouncil/content/resolutions-adopted-security-council-1985", 
+                    resolution_table = links.df$resolution_table[1922],    # Same as the others on the page for 1985 resolutions
+                    resolution_links = "https://undocs.org/S/RES/571(1985)",
+                    resolution_id = "S/RES/571(1985)"))
 
 # (2) Download the resolutions
 ### ------------------------------------------------------------------------ ###
 # Data available as .pdf and .docx
 
-### ADJUST
+# Add column with naming convention
+links.df <- links.df %>%
+  mutate(filename = str_replace_all(resolution_id, "[:punct:]", "_"))
 
 map2(
-  .x = cquery.df$csv.link,
-  .y = cquery.df$iso2,
+  .x = links.df$resolution_links,
+  .y = links.df$filename,
   .f = ~ {
     Sys.sleep(sample(seq(2, 10, 0.5), 1))
     download.file(url = .x, destfile = paste0("./GIZ-files/", .y, ".csv"), method = "curl")
   }
 )
-
-###
-
-# Check the length whether the length of the respective vectors is constant
-# across approaches (currently it isn't)
-tbl_rsl <- unnest(links.df, resolution_table)
-link_rsl <- unnest(links.df, resolution_links)
