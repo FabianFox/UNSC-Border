@@ -5,6 +5,11 @@
 if (!require("pacman")) install.packages("pacman")
 p_load(tidyverse, rvest)
 
+# TO DO:
+# pdfs are embedded in an iframe but the URL can still be manipulated in order to
+# download the files
+# i.e. https://undocs.org/pdf?symbol=en/S/RES/572(1985)
+
 # (1) Locate the resolutions
 ### ------------------------------------------------------------------------ ###
 
@@ -67,9 +72,12 @@ links.df <- links.df %>%
   select(-c(tbl_length, names)) %>%
   unnest(resolution_links, .preserve = resolution_table) %>%
   mutate(resolution_id = flatten_chr(str_extract_all(resolution_links, "(?<=org/).+"))) %>%
-  distinct(resolution_links, .keep_all = TRUE) %>%        # some links are included multiple times
-  filter(str_detect(resolution_links, "RES") == TRUE)     # some letters that are not resolutions are included
+  distinct(resolution_links, .keep_all = TRUE) %>%          # some links are included multiple times
+  filter(str_detect(resolution_links, "RES") == TRUE) %>%   # some letters that are not resolutions are included
+  mutate(pdf_link = paste0("https://undocs.org/pdf?symbol=en/", resolution_id)) # url that leads directly to the pdf (no iframe)
 
+# (2) Checks
+### ------------------------------------------------------------------------ ###
 # Check whether all resolutions have been detected
 all_resolutions <- links.df %>%
   distinct(resolution_links, .keep_all = TRUE) %>%
@@ -90,9 +98,10 @@ links.df <- bind_rows(links.df,
                     links = "https://www.un.org/securitycouncil/content/resolutions-adopted-security-council-1985", 
                     resolution_table = links.df$resolution_table[1922],    # Same as the others on the page for 1985 resolutions
                     resolution_links = "https://undocs.org/S/RES/571(1985)",
-                    resolution_id = "S/RES/571(1985)"))
+                    resolution_id = "S/RES/571(1985)",
+                    pdf_link = "https://undocs.org/pdf?symbol=en/S/RES/571(1985)"))
 
-# (2) Download the resolutions
+# (3) Download the resolutions
 ### ------------------------------------------------------------------------ ###
 # Data available as .pdf and .docx
 
@@ -101,10 +110,10 @@ links.df <- links.df %>%
   mutate(filename = str_replace_all(resolution_id, "[:punct:]", "_"))
 
 map2(
-  .x = links.df$resolution_links,
-  .y = links.df$filename,
+  .x = links.df$pdf_link[1:10],
+  .y = links.df$filename[1:10],
   .f = ~ {
     Sys.sleep(sample(seq(2, 10, 0.5), 1))
-    download.file(url = .x, destfile = paste0("./GIZ-files/", .y, ".csv"), method = "curl")
+    download.file(url = .x, destfile = paste0("./data/resolutions/", .y, ".pdf"), method = "libcurl", mode = "wb")
   }
 )
