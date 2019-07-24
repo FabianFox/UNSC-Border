@@ -43,7 +43,7 @@ scrape_table <- function(x){
   
   x %>%
     read_html() %>%
-    html_nodes(".table") %>%    # table?
+    html_nodes(".table") %>%
     html_table() %>%
     flatten_df()
   
@@ -110,10 +110,13 @@ links.df <- links.df %>%
   mutate(filename = str_replace_all(resolution_id, "[:punct:]", "_"))
 
 map2(
-  .x = links.df$pdf_link[1:10],
-  .y = links.df$filename[1:10],
+  .x = links.df$pdf_link,
+  .y = links.df$filename,
   .f = ~ {
     Sys.sleep(sample(seq(2, 10, 0.5), 1))
     download.file(url = .x, destfile = paste0("./data/resolutions/", .y, ".pdf"), method = "libcurl", mode = "wb")
   }
 )
+
+# saveRDS(links.df, file = "./output/UNSC_base_df.rds")
+# links.df <- readRDS(file = "./output/UNSC_base_df.rds")
