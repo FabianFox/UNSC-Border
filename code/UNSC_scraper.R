@@ -5,7 +5,7 @@
 if (!require("pacman")) install.packages("pacman")
 p_load(tidyverse, rvest)
 
-# TO DO:
+# NOTE:
 # pdfs are embedded in an iframe but the URL can still be manipulated in order to
 # download the files
 # i.e. https://undocs.org/pdf?symbol=en/S/RES/572(1985)
@@ -23,9 +23,7 @@ links <- read_html(rootURL) %>%
   tibble(
     year = str_extract(., "(?<=-)[:digit:]{4}"),    # Some href contain full links
     links = ifelse(str_detect(., "https") == FALSE, # hence the ifelse-condition
-      paste0("https://www.un.org", .), .
-    )
-  ) %>%
+      paste0("https://www.un.org", .), .)) %>%
   select(-1)
 
 # Get the links to the individual resolution and the accompanying information
@@ -119,4 +117,4 @@ map2(
 )
 
 # saveRDS(links.df, file = "./output/UNSC_base_df.rds")
-# links.df <- readRDS(file = "./output/UNSC_base_df.rds")
+links.df <- readRDS(file = "./output/UNSC_base_df.rds")
