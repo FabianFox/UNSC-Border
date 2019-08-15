@@ -30,7 +30,7 @@ res_files_ocr <- res_files_ocr %>%
 # Read the text from the docs that have OCR now
 # resolutions with multiple pages are split
 ocr_files <- tibble(
-  doc_id = list.files("./", pattern = "*png"),
+  doc_id = list.files("./data/resolutions/png", pattern = "*png"),
   token = ocr(doc_id, engine = tesseract("eng"))
 )
 
@@ -39,6 +39,9 @@ ocr_join <- ocr_files %>%
   mutate(doc_id = unlist(str_extract_all(doc_id, ".+(?=_[:digit:]+.png)"))) %>%
   group_by(doc_id) %>%
   summarise(token = paste(token, collapse = " "))
+
+# Saved as "./data/resolutions/png/res_files_png.rds"
+ocr_join <- readRDS("./data/resolutions/png/res_files_png.rds")
 
 # Join back to the original data
 res_files <- res_files %>%
@@ -51,3 +54,11 @@ res_files$token_ocr <- ocr_join[match(res_files$doc_id, ocr_join$doc_id),]$token
 res_files <- res_files %>%
   mutate(doc_length = str_length(token),
          token = ifelse(doc_length < 100, token_ocr, token))
+
+# Flatten list-column "token"
+res_files <- res_files %>%
+  group_by(doc_id) %>%
+  summarise(token = paste(token, collapse = " "))
+
+# Results saved as "./output/UNSC_corpus.rds"
+saveRDS(res_files, file = "./output/UNSC_corpus.rds")
