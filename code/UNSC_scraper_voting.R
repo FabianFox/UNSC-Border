@@ -66,10 +66,7 @@ safely_table_fun <- safely(table_fun, otherwise = NULL)
 unsc_voting <- unsc_voting %>%
   mutate(voting_df = map(voting_table, ~ table_fun(.x)))
 
-
-##############################################################################
-
-# saveRDS(object = unsc_voting, file = "./output/UNSC_voting_data_raw.rds")
+# Result saved as: "./output/UNSC_voting_data_raw.rds"
 unsc_voting <- readRDS(file = "./output/UNSC_voting_data_raw.rds")
 
 # Data cleaning
@@ -142,3 +139,5 @@ unsc_voting <- unsc_voting %>%
       vote = str_trim(str_remove_all(vote_split, "([:lower:]|[:punct:])"), "both")
     )
   ))
+
+# Saved as "./output/UNSC_voting_data.rds"
