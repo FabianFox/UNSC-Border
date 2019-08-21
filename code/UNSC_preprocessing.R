@@ -47,3 +47,7 @@ res_dfm <- dfm(res_qcorpus, tolower = TRUE, stem = TRUE,
 # TF-IDF
 res_tf <- dfm_tfidf(res_dfm, base = 10)
 topfeatures(res_tf[15, ], n = 10)
+
+# Topic modeling
+### ------------------------------------------------------------------------ ###
+t_model <- stm::stm(res_dfm, K = 10)
