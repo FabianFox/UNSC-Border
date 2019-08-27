@@ -6,7 +6,7 @@
 # Load/install packages
 ### ------------------------------------------------------------------------ ###
 if (!require("pacman")) install.packages("pacman")
-p_load(tidyverse, quanteda, tif)
+p_load(tidyverse, quanteda, tif, spacyr)
 
 # Read resolutions (data created in: UNSC_load_pdf.R)
 ### ------------------------------------------------------------------------ ###
@@ -22,14 +22,16 @@ res_meta <- readRDS("./output/UNSC_voting_data.rds")
 
 # Preprocessing
 ### ------------------------------------------------------------------------ ###
-# Filter to resolutions containing "border"
+# Basic preprocessing
 res_files <- res_files %>%
   mutate(border = str_detect(text, "border"),
          year = strtoi(stringi::stri_extract_last_regex(doc_id, "[:digit:]{4}")),
          text = str_replace_all(text, "(\\\\r?\\\\n)|(\\\\n)", " "),               # replace carriage return (\r) and line feed (\n)
-         text = str_replace_all(text, "\\s+", " ")) %>%                            # delete excessive spaces
-  filter(border == TRUE) %>%
-  select(-border) 
+         text = str_replace_all(text, "\\s+", " "))                                # delete excessive spaces
+
+# Filter to border disputes:
+#  filter(border == TRUE) %>%
+#  select(-border) 
 
 # Transform into a quanteda corpus
 res_qcorpus <- corpus(res_files,
@@ -46,8 +48,27 @@ res_dfm <- dfm(res_qcorpus, tolower = TRUE, stem = TRUE,
 
 # TF-IDF
 res_tf <- dfm_tfidf(res_dfm, base = 10)
-topfeatures(res_tf[15, ], n = 10)
+topfeatures(res_tf[15, ], n = 20)
 
 # Topic modeling
 ### ------------------------------------------------------------------------ ###
 t_model <- stm::stm(res_dfm, K = 10)
+
+# Named entity recognition
+### ------------------------------------------------------------------------ ###
+# Initialize spacy
+spacy_initialize("en_core_web_sm")
+
+# Smaller example
+spacy_test <- res_files %>%
+  slice(1:20)
+
+# Named entity recognition
+spacy_prs <- spacy_parse(spacy_test, tag = TRUE)
+spacy_ext <- entity_extract(spacy_prs)
+
+# filter to recognized countries/locations
+cntry <- spacy_prs %>%
+  filter(entity == "GPE_B" | entity == "GPE_I")
+
+
