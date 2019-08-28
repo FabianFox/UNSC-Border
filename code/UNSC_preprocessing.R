@@ -42,33 +42,3 @@ res_qcorpus <- corpus(res_files,
 res_dfm <- dfm(res_qcorpus, tolower = TRUE, stem = TRUE, 
                remove_punct = TRUE, remove = stopwords("english"),
                remove_numbers = TRUE)
-
-# Basic analysis
-### ------------------------------------------------------------------------ ###
-
-# TF-IDF
-res_tf <- dfm_tfidf(res_dfm, base = 10)
-topfeatures(res_tf[15, ], n = 20)
-
-# Topic modeling
-### ------------------------------------------------------------------------ ###
-t_model <- stm::stm(res_dfm, K = 10)
-
-# Named entity recognition
-### ------------------------------------------------------------------------ ###
-# Initialize spacy
-spacy_initialize("en_core_web_sm")
-
-# Smaller example
-spacy_test <- res_files %>%
-  slice(1:20)
-
-# Named entity recognition
-spacy_prs <- spacy_parse(spacy_test, tag = TRUE)
-spacy_ext <- entity_extract(spacy_prs)
-
-# filter to recognized countries/locations
-cntry <- spacy_prs %>%
-  filter(entity == "GPE_B" | entity == "GPE_I")
-
-
