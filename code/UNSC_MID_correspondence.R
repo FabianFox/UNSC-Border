@@ -5,7 +5,7 @@
 
 # Tasks:
 # 1. Extraction country names from strings
-# 2. Add metadata: 
+# 2. Add metadata
 
 # Load/install packages
 ### ------------------------------------------------------------------------ ###
@@ -18,20 +18,18 @@ p_load(tidyverse, rio, spacyr)
 spacy_initialize("en_core_web_sm")
 
 # Smaller random sample of articles
-set.seed(4535)
-floor(runif(3, min=0, max=101))
+# set.seed(4535)
+# floor(runif(25, min = 1, ma x = 101))
 spacy_test <- res_files %>%
   slice(1:20)
 
 # Named entity recognition
-spacy_prs <- spacy_parse(spacy_test, tag = TRUE)
+spacy_prs <- spacy_parse(res_files, tag = TRUE)
 spacy_ext <- entity_extract(spacy_prs)
 
 # filter to recognized countries/locations
 cntry <- spacy_prs %>%
   filter(entity == "GPE_B" | entity == "GPE_I")
-
-
 
 # TF-IDF
 ### ------------------------------------------------------------------------ ###
