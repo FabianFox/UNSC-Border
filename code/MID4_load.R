@@ -46,3 +46,7 @@ mid_dyad.df <- sideA %>%
 
 # Checks
 which(!(sideA$dispnum3 %in% sideB$dispnum3)) # col: 25, dispnum3: 258
+
+# Join to incident data
+mid_inc_dyad.df <- mid_inc.df %>%
+  left_join(mid_dyad.df, by = c("dispnum3"))
