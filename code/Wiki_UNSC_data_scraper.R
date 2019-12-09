@@ -1,18 +1,18 @@
 # UNSC resolutions - Information from Wikipedia
 
 # Notes & Issues:
-# - add metadata from UNSC_scraper_voting.R
+# - 
 
 # Load/install packages
 ### ------------------------------------------------------------------------ ###
 if (!require("pacman")) install.packages("pacman")
-p_load(tidyverse, rvest, quanteda, tif)
+p_load(tidyverse, rvest, quanteda, tif, janitor, lubridate, rio)
 
-# Read resolutions
+# Create a list of links to map over
 ### ------------------------------------------------------------------------ ###
-
 base_url <- "https://en.wikipedia.org/wiki/List_of_United_Nations_Security_Council_Resolutions_"
 
+# Individual pages
 wiki_res.df <- tibble(
   from = seq(1, 2410, 100),
   to = seq(100, 2500, 100)
@@ -21,6 +21,7 @@ wiki_res.df <- tibble(
   select(-from, -to)
 
 # Create a function that gathers the individual wikipedia tables across pages
+### ------------------------------------------------------------------------ ###
 wiki_scrape <- function(x){
   read_html(x) %>%
   html_table(fill = TRUE) %>%
@@ -30,11 +31,15 @@ wiki_scrape <- function(x){
 # Safely
 wiki_scrape <- possibly(wiki_scrape, NULL)
 
-# Scrape
+# Scrape and clean wiki tables
+### ------------------------------------------------------------------------ ###
 wiki_tables <- wiki_res.df %>%
   mutate(data = map(pages, 
-                    ~wiki_scrape(.x))) 
+                    ~wiki_scrape(.x))) %>%
+  unnest(cols = data) %>%
+  clean_names() %>%
+  mutate(date = parse_date_time(date, "d!%b!%Y!"))
 
-# TO DO
-# Unnest and clean (date etc.)
-# Join to UNSC_meta
+# Export
+### ------------------------------------------------------------------------ ###
+# export(wiki_tables, "./output/Wiki_meta_df.rds")
