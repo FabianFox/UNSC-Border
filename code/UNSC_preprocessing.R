@@ -6,15 +6,27 @@
 # Load/install packages
 ### ------------------------------------------------------------------------ ###
 if (!require("pacman")) install.packages("pacman")
-p_load(tidyverse, quanteda, tif, spacyr)
+p_load(tidyverse, quanteda, tif, spacyr, rio)
 
 # Read resolutions (data created in: UNSC_load_pdf.R)
 ### ------------------------------------------------------------------------ ###
-res_files <- readRDS(file = "./output/UNSC_corpus.rds") %>%
-  rename(text = token) # adhere to tif-standard
+res_files <- import(file = "./output/UNSC_corpus.rds") %>%
+  rename(text = token) %>% # adhere to tif-standard 
+  mutate(resolution_num = strtoi(str_extract(doc_id, "(?<=S_RES_)[:digit:]+")))
+
+# Resolution 1107 is mistakenly coded as resolution 11
+res_files[which(duplicated(res_files$resolution_num) == TRUE),]$resolution_num <- 1107
 
 # Meta-data
-res_meta <- readRDS("./output/UNSC_voting_data.rds")
+res_meta <- import("./output/UNSC_voting_data.rds") %>%
+  mutate(resolution = pluck(voting_df, "resolution"),
+         resolution_num = str_extract(resolution, "(?<=S/RES/)[:digit:]+"))
+
+# Meta information from Wikipedia
+res_wiki_meta <- import("./output/Wiki_meta_df.rds") %>%
+  rename(resolution_num = resolution)
+
+# Join meta information and resolution
 
 # Data Preparation
 # Overview of necessary decisions: Denny & Sperling (2018: 170-172)
