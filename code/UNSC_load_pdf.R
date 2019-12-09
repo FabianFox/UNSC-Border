@@ -61,4 +61,4 @@ res_files <- res_files %>%
   summarise(token = paste(token, collapse = " "))
 
 # Results saved as "./output/UNSC_corpus.rds"
-saveRDS(res_files, file = "./output/UNSC_corpus.rds")
+# saveRDS(res_files, file = "./output/UNSC_corpus.rds")
