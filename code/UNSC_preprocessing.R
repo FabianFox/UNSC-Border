@@ -19,14 +19,28 @@ res_files[which(duplicated(res_files$resolution_num) == TRUE),]$resolution_num <
 
 # Meta-data
 res_meta <- import("./output/UNSC_voting_data.rds") %>%
-  mutate(resolution = pluck(voting_df, "resolution"),
-         resolution_num = str_extract(resolution, "(?<=S/RES/)[:digit:]+"))
+  mutate(resolution = map_chr(voting_df, "resolution"),
+         resolution_num = strtoi(str_extract(resolution, "(?<=S/RES/)[:digit:]+")))
 
 # Meta information from Wikipedia
 res_wiki_meta <- import("./output/Wiki_meta_df.rds") %>%
-  rename(resolution_num = resolution)
+  rename(resolution_num = resolution) %>%
+  nest(data = c(pages, date, vote, concerns))
 
 # Join meta information and resolution
+unsc.df <- res_files %>%
+  left_join(res_meta, by = "resolution_num") %>%
+  left_join(res_wiki_meta, by = "resolution_num") %>%
+  arrange(resolution_num)
+
+# Sanity checks
+### ------------------------------------------------------------------------ ###
+
+# Equal number of resolution in the datasets
+# Resolution 2481 & 2482 missing in res_meta
+res_files[which(!res_files$resolution_num %in% res_meta$resolution_num), 
+          c("doc_id", "resolution_num")]
+
 
 # Data Preparation
 # Overview of necessary decisions: Denny & Sperling (2018: 170-172)
