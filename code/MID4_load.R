@@ -50,3 +50,13 @@ which(!(sideA$dispnum3 %in% sideB$dispnum3)) # col: 25, dispnum3: 258
 # Join to incident data
 mid_inc_dyad.df <- mid_inc.df %>%
   left_join(mid_dyad.df, by = c("dispnum3"))
+
+# Join the data on the MID narratives (Gibler 2018)
+### ------------------------------------------------------------------------ ###
+# Load the data created in MID_Narratives_preprocessing.R
+mid_narratives <- import("./data/independent variables/Gibler2018_MID_join.rds")
+
+# Join to the dyadic MID data
+## !!! Check whether all conflicts have a matching narrative
+mid_inc_dyad.df <- mid_inc_dyad.df %>%
+  left_join(mid_narratives, by = c("dispnum3" = "dispnum"))
