@@ -36,7 +36,7 @@ gibler.tidy <- gibler.tidy %>%
 
 # (5) Clean the narratives
 gibler.tidy <- gibler.tidy %>%
-  mutate(dispnum = str_extract(meta, "(?<=dispute_number )[:digit:]+"),
+  mutate(dispnum = strtoi(str_extract(meta, "(?<=dispute_number )[:digit:]+")),
          narrative = str_extract_all(meta, "(?<=narrative ).+")) %>%
   select(dispnum, narrative)
 
