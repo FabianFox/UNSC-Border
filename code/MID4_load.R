@@ -12,7 +12,8 @@ p_load(tidyverse, rio, countrycode)
 ### ------------------------------------------------------------------------ ###
 # One record per dispute
 mid_inc.df <- import("./data/independent variables/MID 4.3/MIDA 4.3.csv") %>%
-  filter(between(styear, 1945, 2010)) 
+  filter(between(styear, 1945, 2010)) %>%
+  as_tibble()
 
 # One record per participant per dispute
 mid_dyad.df <- import("./data/independent variables/MID 4.3/MIDB 4.3.csv") %>%
@@ -22,7 +23,8 @@ mid_dyad.df <- import("./data/independent variables/MID 4.3/MIDB 4.3.csv") %>%
                                               "RUM" = "Romania",
                                               "USR" = "Russia",
                                               "VTM" = "Vietnam",
-                                              "ZAI" = "Democratic Republic of the Congo")))
+                                              "ZAI" = "Democratic Republic of the Congo"))) %>%
+  as_tibble()
 
 # Join conflict parties to incident level data
 ### ------------------------------------------------------------------------ ###
@@ -45,7 +47,8 @@ mid_dyad.df <- sideA %>%
   left_join(sideB)
 
 # Checks
-which(!(sideA$dispnum3 %in% sideB$dispnum3)) # col: 25, dispnum3: 258
+# dispnum3: 258 | cntrya: Mongolia | cntryb: NA
+which(!(sideA$dispnum3 %in% sideB$dispnum3)) 
 
 # Join to incident data
 mid_inc_dyad.df <- mid_inc.df %>%
@@ -57,6 +60,24 @@ mid_inc_dyad.df <- mid_inc.df %>%
 mid_narratives <- import("./data/independent variables/Gibler2018_MID_join.rds")
 
 # Join to the dyadic MID data
-## !!! Check whether all conflicts have a matching narrative
 mid_inc_dyad.df <- mid_inc_dyad.df %>%
-  left_join(mid_narratives, by = c("dispnum3" = "dispnum"))
+  left_join(mid_narratives, by = c("dispnum3" = "n_dispnum"))
+
+# Checks
+### ------------------------------------------------------------------------ ###
+# 55 incidents without narratives
+check_narratives <- which(!(mid_inc_dyad.df$dispnum3 %in% mid_narratives$n_dispnum)) 
+
+# Restrict to incidents since 1945
+# These are MIDs where Gibler (2018) provides a narrative but the MID A 4.3 does
+# not list the respective MID
+# !!! Why are these MIDs not in the dataset?
+narratives_not_in_mid <- mid_narratives[check_narratives,] %>%
+  filter(n_styear >= 1945) %>%
+  arrange(n_dispnum)
+
+# These are MIDs where MID A 4.3 has an entry but Gibler (2018) does not
+mid_missing_narratives <- mid_inc_dyad.df %>%
+  filter(is.na(narrative))
+
+       
