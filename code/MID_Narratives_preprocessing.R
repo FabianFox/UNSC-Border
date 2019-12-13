@@ -41,12 +41,23 @@ date_extract <- paste0("(", m, ")", "\\s*", "[:digit:]*", "\\s*", "[:digit:]{4}"
 
 gibler.tidy <- gibler.tidy %>%
   mutate(n_dispnum = strtoi(str_extract(meta, "(?<=dispute_number )[:digit:]+")),
-         narrative = str_extract_all(meta, "(?<=narrative ).+"),
+         narrative = flatten_chr(str_extract_all(meta, "(?<=narrative ).+")),
          date = str_extract(meta, date_extract)) %>%
   select(n_dispnum, date, narrative) %>%
-  mutate(n_stday = str_extract(date, paste0("(?<=[", m, " ])", "[:digit:]{1,2}")),
+  mutate(n_stday = strtoi(str_extract(date, paste0("(?<=[", m, " ])", "[:digit:]{1,2}"))),
          n_stmon = str_extract(date, m),
-         n_styear = str_extract(date, "[:digit:]{4}"))
+         n_styear = strtoi(str_extract(date, "[:digit:]{4}")))
+
+# Replace full name of month by integer
+month_replace <- tibble(
+  n_stmon = tolower(month.name),
+  n_stmon_num = seq(1:12)
+)
+
+gibler.tidy <- gibler.tidy %>%
+  left_join(month_replace) %>%
+  select(-n_stmon) %>%
+  rename(n_stmon = n_stmon_num)
 
 # Export
 export(gibler.tidy, "./data/independent variables/Gibler2018_MID_join.rds")
