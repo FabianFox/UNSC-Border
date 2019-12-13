@@ -35,10 +35,18 @@ gibler.tidy <- gibler.tidy %>%
   summarise(meta = paste0(word, collapse = " "))
 
 # (5) Clean the narratives
+# Build a date extractor
+m <- paste(tolower(month.name), collapse = "|")
+date_extract <- paste0("(", m, ")", "\\s*", "[:digit:]*", "\\s*", "[:digit:]{4}")
+
 gibler.tidy <- gibler.tidy %>%
-  mutate(dispnum = strtoi(str_extract(meta, "(?<=dispute_number )[:digit:]+")),
-         narrative = str_extract_all(meta, "(?<=narrative ).+")) %>%
-  select(dispnum, narrative)
+  mutate(n_dispnum = strtoi(str_extract(meta, "(?<=dispute_number )[:digit:]+")),
+         narrative = str_extract_all(meta, "(?<=narrative ).+"),
+         date = str_extract(meta, date_extract)) %>%
+  select(n_dispnum, date, narrative) %>%
+  mutate(n_stday = str_extract(date, paste0("(?<=[", m, " ])", "[:digit:]{1,2}")),
+         n_stmon = str_extract(date, m),
+         n_styear = str_extract(date, "[:digit:]{4}"))
 
 # Export
 export(gibler.tidy, "./data/independent variables/Gibler2018_MID_join.rds")
