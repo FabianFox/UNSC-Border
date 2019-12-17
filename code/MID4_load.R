@@ -48,7 +48,9 @@ mid_dyad.df <- sideA %>%
 
 # Checks
 # dispnum3: 258 | cntrya: Mongolia | cntryb: NA
-which(!(sideA$dispnum3 %in% sideB$dispnum3)) 
+missing_in_sideB <- sideA[which(!(sideA$dispnum3 %in% sideB$dispnum3)),]$dispnum3
+# Which conflict?
+mid_dyad.df[mid_dyad.df$dispnum3 == missing_in_sideB,]
 
 # Join to incident data
 mid_inc_dyad.df <- mid_inc.df %>%
@@ -62,6 +64,11 @@ mid_narratives <- import("./data/independent variables/Gibler2018_MID_join.rds")
 # Join to the dyadic MID data
 mid_inc_dyad.df <- mid_inc_dyad.df %>%
   left_join(mid_narratives, by = c("dispnum3" = "n_dispnum"))
+
+# Data cleaning
+# Replace -9 (MID's NA) with NA
+mid_inc_dyad.df <- mid_inc_dyad.df %>%
+  mutate_all(list(~na_if(x = ., y = -9)))
 
 # Checks
 ### ------------------------------------------------------------------------ ###
