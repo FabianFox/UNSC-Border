@@ -41,23 +41,28 @@ unsc.df <- res_files %>%
 res_files[which(!res_files$resolution_num %in% res_meta$resolution_num), 
           c("doc_id", "resolution_num")]
 
+# Some documents (column: text) are not distinct
 
 # Data Preparation
+### ------------------------------------------------------------------------ ###
 # Overview of necessary decisions: Denny & Sperling (2018: 170-172)
 # Recommendations (preprocessing): Welbers et al. (2017: 250-252) 
 
 # Preprocessing
 ### ------------------------------------------------------------------------ ###
 # Basic preprocessing
-res_files <- res_files %>%
-  mutate(border = str_detect(text, "border"),
-         year = strtoi(stringi::stri_extract_last_regex(doc_id, "[:digit:]{4}")),
+unsc.df <- unsc.df %>%
+  mutate(year = strtoi(stringi::stri_extract_last_regex(doc_id, "[:digit:]{4}")),
          text = str_replace_all(text, "(\\\\r?\\\\n)|(\\\\n)", " "),               # replace carriage return (\r) and line feed (\n)
-         text = str_replace_all(text, "\\s+", " "))                                # delete excessive spaces
+         text = str_replace_all(text, "\\s+", " "),                                # delete excessive whitespaces (between words)
+         text = str_trim(text, "both"),                                            # trim leading/trailing whitespace
+         text = str_to_lower(text),                                                # to lowercase
+         border = str_detect(text, "border"))
 
-# Filter to border disputes:
-#  filter(border == TRUE) %>%
-#  select(-border) 
+# Filter to border disputes issues:
+unsc.border.df <- unsc.df %>%
+  filter(border == TRUE) %>%
+  select(-border) 
 
 # Transform into a quanteda corpus
 res_qcorpus <- corpus(res_files,
